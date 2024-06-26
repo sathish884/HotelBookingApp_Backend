@@ -7,6 +7,7 @@ const userAuthRoutes = require("./routers/UserAuth");
 const hotelRoutes = require("./routers/Hotels");
 const roomRoutes = require("./routers/Rooms");
 const ratingRoutes = require("./routers/Ratings");
+const bookingRoutes = require("./routers/Bookings");
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,7 @@ app.use("/api", userAuthRoutes);
 app.use("/api", hotelRoutes);
 app.use("/api", roomRoutes);
 app.use("/api", ratingRoutes);
+app.use("/api", bookingRoutes);
 
 mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log("MongoDB was connected");
