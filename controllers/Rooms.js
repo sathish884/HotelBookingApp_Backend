@@ -24,10 +24,11 @@ exports.createRooms = async (req, res) => {
 // Update Rooms
 exports.updateRoom = async (req, res) => {
     try {
-        const { roomId, roomName, amenities, price, sharingCount, descriptions } = req.body;
+        const roomId = req.query;
+        const { roomName, amenities, price, sharingCount, descriptions } = req.body;
 
         if (!roomId) {
-            return res.status(400).json({ message: "Hotel ID is required" });
+            return res.status(400).json({ message: "Room ID is required" });
         }
 
         const updateData = {
@@ -47,9 +48,9 @@ exports.updateRoom = async (req, res) => {
             updateData,
             { new: true, runValidators: true }
         );
-        res.status(200).json({ message: "Room Updated successfully", data: newRoom });
+       return res.status(200).json({ message: "Room Updated successfully", data: newRoom });
     } catch (error) {
-        res.status(500).json({ message: error.message })
+       return res.status(500).json({ message: error.message })
     }
 };
 

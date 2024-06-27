@@ -1,6 +1,7 @@
 const Hotel = require("../models/Hotel");
 const multer = require("multer");
 
+
 // Create Hotel
 exports.createHotel = async (req, res) => {
     try {
@@ -41,7 +42,8 @@ exports.createHotel = async (req, res) => {
 // Update the hotels
 exports.updateHotel = async (req, res) => {
     try {
-        const { hotelId, hotelName, amenities, description, address, locations, rooms } = req.body;
+        const hotelId = req.query;
+        const { hotelName, amenities, description, address, locations, rooms } = req.body;
 
         if (!hotelId) {
             return res.status(400).json({ message: "Hotel ID is required" });
@@ -70,7 +72,7 @@ exports.updateHotel = async (req, res) => {
             return res.status(404).json({ message: "Hotel not found" });
         }
 
-        res.status(200).json({ message: "Hotel Updated Successfully", data: hotel });
+        return res.status(200).json({ message: "Hotel Updated Successfully", data: hotel });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -1,28 +1,50 @@
 const Ratings = require("../models/Ratings");
 const Hotels = require("../models/Hotel");
 
-// Create Rating
+// Add Rating for Hotel
 exports.createRating = async (req, res) => {
     try {
-        const { rating, userId, hotelId } = req.body;
+        const {hotelId} = req.query;
+        const { rating, userId } = req.body;
+
         // Check if the hotel exists
         const hotel = await Hotels.findById(hotelId);
         if (!hotel) {
             return res.status(404).json({ message: "Hotel not found" });
         }
+
         const newRating = new Ratings({
             rating,
             user: userId,
             hotel: hotelId
         });
-        await newReview.save();
-
-        hotel.rating.push(newReview._id);
-        await hotel.save();
+        
+        await newRating.save();
 
         res.status(200).json({ message: "Rating Created successfully", data: newRating })
     } catch (error) {
         res.status(500).json({ message: error.message })
+    }
+}
+
+// Get all ratings for Hotel
+exports.getRaings = async (req, res) =>{
+    try {
+        const {hotelId} = req.query;
+
+        if (!hotelId) {
+            return res.status(400).json({ message: "Hotel ID is required" });
+        }
+
+        const ratings = await Ratings.find({hotel:hotelId}).populate('user');
+
+         if (!ratings) {
+            return res.status(404).json({ message: "Hotel not found" });
+        }
+
+        res.json({data:ratings});
+    } catch (error) {
+        res.status(500).json({message:error.message});
     }
 }
 
