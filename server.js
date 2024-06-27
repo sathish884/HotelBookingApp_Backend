@@ -1,13 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyparser = require("body-parser");
-const cors = require("cors");
 require("dotenv").config();
+const cors = require("cors");
+
 const userAuthRoutes = require("./routers/UserAuth");
 const hotelRoutes = require("./routers/Hotels");
 const roomRoutes = require("./routers/Rooms");
 const ratingRoutes = require("./routers/Ratings");
 const bookingRoutes = require("./routers/Bookings");
+
 
 const app = express();
 app.use(cors());
@@ -24,4 +26,6 @@ mongoose.connect(process.env.MONGODB_URI).then(() => {
     app.listen(process.env.PORT, () => {
         console.log(`Server is running on Port ${process.env.PORT}`);
     })
+}).catch(error => {
+    console.log("Connection failed ", error);
 });

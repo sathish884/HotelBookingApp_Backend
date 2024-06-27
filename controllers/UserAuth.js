@@ -8,15 +8,23 @@ require("dotenv").config();
 exports.signUp = async (req, res) => {
     try {
         const { userName, sureName, email, password, confirmPassword } = req.body;
+        
+        // Check if user already exists
         const user = await User.findOne({ email });
         if (user) {
-            res.status(404).json({ message: "Email already exist" });
+            return res.status(401).json({ message: "Email already exists" });
         }
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: "Passwords do not match" });
+        }
+
+        // Hash passwords
         const hashPassword = await bcrypt.hash(password, 10);
         const hashConfirmPassword = await bcrypt.hash(confirmPassword, 10);
-        if (password !== confirmPassword) {
-            res.status(400).json({ message: "Password is mismatch" })
-        }
+
+        // Create new user
         const newUser = new User({
             userName,
             sureName,
@@ -24,12 +32,19 @@ exports.signUp = async (req, res) => {
             password: hashPassword,
             confirmPassword: hashConfirmPassword
         });
+        
+        // Save new user
         await newUser.save();
-        res.status(200).json({ message: "Successfully Registered " })
+        
+        // Send success response
+        return res.status(200).json({ message: "Successfully Registered" });
+
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        // Send error response
+        return res.status(500).json({ message: error.message });
     }
 }
+
 
 // login
 exports.login = async (req, res) => {
@@ -37,11 +52,11 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
         if (!email) {
-            res.status(404).json({ message: "User not found" });
+           return res.status(404).json({ message: "User not found" });
         }
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
-            res.status(400).json({ message: "Invalid Credentials" });
+          return res.status(400).json({ message: "Invalid Credentials" });
         }
         const otp = Math.floor(Math.random() * 10000).toString();
         user.otp = otp;
@@ -62,9 +77,9 @@ exports.login = async (req, res) => {
             subject: "Your OTP code",
             text: `Your otp code is ${otp}`
         })
-        res.status(200).json({ message: "OTP is sent to your email", otp });
+        return res.status(200).json({ message: "OTP is sent to your email", otp });
     } catch (error) {
-        res.status(500).json({ message: error.message })
+       return res.status(500).json({ message: error.message })
     }
 }
 
