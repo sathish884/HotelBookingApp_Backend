@@ -1,11 +1,15 @@
 const express = require("express");
 const hotelController = require("../controllers/Hotels");
-const upload = require("../middleware/multerConFig");
-const authMiddleware = require("../middleware/auth");
+const uploads = require("../middleware/multerConFig"); // Ensure this path is correct
+//const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 
-router.route("/createHotel").post(upload.array("images", 10), authMiddleware, hotelController.createHotel);
-router.route("/updateHotel").put(upload.array("images", 10), hotelController.updateHotel);
+// Route with file upload and auth middleware
+router.route("/createHotel").post(uploads.upload, hotelController.createHotel);
+
+// Other routes with appropriate middlewares
+router.route("/updateHotel").put(uploads.upload, hotelController.updateHotel);
+
 router.route("/getAllHotelList").get(hotelController.getAllHotelList);
 router.route("/getSingleHotelList").get(hotelController.getSingleHotelList);
 router.route("/deleteHotel").delete(hotelController.deleteHotel);

@@ -5,6 +5,7 @@ exports.createRooms = async (req, res) => {
         const { roomName, amenities, price, sharingCount, descriptions } = req.body;
 
         const imagePaths = req.files.map(file => file.path);
+        
         const newRoom = new Rooms({
             roomName,
             amenities,
@@ -48,6 +49,7 @@ exports.updateRoom = async (req, res) => {
             updateData,
             { new: true, runValidators: true }
         );
+        
        return res.status(200).json({ message: "Room Updated successfully", data: newRoom });
     } catch (error) {
        return res.status(500).json({ message: error.message })

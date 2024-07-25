@@ -1,37 +1,46 @@
-const Hotel = require("../models/Hotel");
-const multer = require("multer");
+const Hotel = require('../models/Hotel'); // Adjust the path accordingly
+const multer = require('multer');
+const path = require('path');
 
 
-// Create Hotel
 exports.createHotel = async (req, res) => {
     try {
-        const { hotelName, amenities, description, address, locations, rooms } = req.body;
+        const { hotelName, amenities, description, address } = req.body;
+
+        const locations = {
+            lat: parseFloat(req.body['locations.lat']),
+            lang: parseFloat(req.body['locations.lang'])
+        };
+
+        // Validate locations
+        if (isNaN(locations.lat) || isNaN(locations.lang)) {
+            return res.status(400).json({ message: "Invalid latitude or longitude value." });
+        }
 
         // Check if files were uploaded
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: "No images uploaded." });
         }
 
-        // Extract image paths
-        const imagePaths = req.files.map(file => file.path);
+        // Extract filenames from file paths
+        const imagePaths = req.files.map(file => path.basename(file.path));
 
         // Create a new hotel document
         const newHotel = new Hotel({
             hotelName,
-            amenities: amenities ? amenities.split(",") : [],
+            hotelName: amenities ? amenities.split(",") : [],
             description,
             address,
-            locations: {
-                lat: locations.lat,
-                lang: locations.lang
-            },
-            rooms,
+            locations,
+            // rooms: JSON.parse(rooms),
             images: imagePaths
         });
 
         await newHotel.save();
+        console.log('Received request body:', req.body);
         res.status(201).json({ message: "Hotel Created Successfully", data: newHotel });
     } catch (error) {
+        console.error(error);
         if (error instanceof multer.MulterError) {
             res.status(400).json({ message: error.message });
         } else {
@@ -39,42 +48,39 @@ exports.createHotel = async (req, res) => {
         }
     }
 };
-// Update the hotels
+
 exports.updateHotel = async (req, res) => {
     try {
-        const hotelId = req.query;
-        const { hotelName, amenities, description, address, locations, rooms } = req.body;
+        const { hotelId } = req.query;
 
         if (!hotelId) {
             return res.status(400).json({ message: "Hotel ID is required" });
         }
 
-        const updateData = {
-            hotelName,
-            amenities: amenities ? amenities.split(",") : [],
-            description,
-            address,
-            locations: locations ? JSON.parse(locations) : {},
-            rooms: rooms ? rooms.split(",") : []
-        };
-
         if (req.files && req.files.length > 0) {
-            updateData.images = req.files.map(file => file.path);
+            req.body.images = req.files.map(file => path.basename(file.path));
         }
 
-        const hotel = await Hotel.findByIdAndUpdate(
+        req.body.amenities = req.body.amenities ? req.body.amenities.split(",") : [];
+
+        const newHotel = await Hotel.findByIdAndUpdate(
             hotelId,
-            updateData,
+            req.body,
             { new: true, runValidators: true }
         );
 
-        if (!hotel) {
+        if (!newHotel) {
             return res.status(404).json({ message: "Hotel not found" });
         }
 
-        return res.status(200).json({ message: "Hotel Updated Successfully", data: hotel });
+        return res.status(200).json({ message: "Hotel updated successfully", data: newHotel });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(error);
+        if (error instanceof multer.MulterError) {
+            res.status(400).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
     }
 };
 

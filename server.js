@@ -15,6 +15,8 @@ const app = express();
 app.use(cors());
 // Middleware to parse JSON bodies
 app.use(bodyparser.json());
+//app.use('../uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use("/api", userAuthRoutes);
 app.use("/api", hotelRoutes);
 app.use("/api", roomRoutes);
