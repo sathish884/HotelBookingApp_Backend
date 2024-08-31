@@ -1,26 +1,85 @@
 const Rooms = require("../models/Rooms");
+const multer = require('multer');
+const path = require('path');
 
-exports.createRooms = async (req, res) => {
+
+// exports.createHotel = async (req, res) => {
+//     try {
+//         const { hotelName, amenities, description, address } = req.body;
+
+//         const locations = {
+//             lat: parseFloat(req.body['locations.lat']),
+//             lang: parseFloat(req.body['locations.lang'])
+//         };
+
+//         // Validate locations
+//         if (isNaN(locations.lat) || isNaN(locations.lang)) {
+//             return res.status(400).json({ message: "Invalid latitude or longitude value." });
+//         }
+
+//         // Check if files were uploaded
+//         if (!req.files || req.files.length === 0) {
+//             return res.status(400).json({ message: "No images uploaded." });
+//         }
+
+//         // Extract filenames from file paths
+//         const imagePaths = req.files.map(file => path.basename(file.path));
+
+//         // Create a new hotel document
+//         const newHotel = new Hotel({
+//             hotelName,
+//             amenities: amenities ? amenities.split(",") : [],
+//             description,
+//             address,
+//             locations,
+//             images: imagePaths
+//         });
+
+//         await newHotel.save();
+//         console.log('Received request body:', req.body);
+//         res.status(201).json({ message: "Hotel Created Successfully", data: newHotel });
+//     } catch (error) {
+//         console.error(error);
+//         if (error instanceof multer.MulterError) {
+//             res.status(400).json({ message: error.message });
+//         } else {
+//             res.status(500).json({ message: error.message });
+//         }
+//     }
+// }
+exports.createRoom = async (req, res) => {
     try {
-        const { roomName, amenities, price, sharingCount, descriptions } = req.body;
+        const { name, amenities, description, rentperday, maxCount, currentbooking, type } = req.body;
 
-        const imagePaths = req.files.map(file => file.path);
-        
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: "No images uploaded." });
+        }
+
+        const imagePaths = req.files.map(file => path.basename(file.path));
+
         const newRoom = new Rooms({
-            roomName,
-            amenities,
-            price,
-            sharingCount,
-            descriptions,
-            images: imagePaths
+            name,
+            amenities: amenities ? amenities.split(",") : [],
+            description,
+            rentperday,
+            maxCount,
+            currentbooking,
+            type,
+            imagesurls: imagePaths
         });
 
         await newRoom.save();
-        res.status(200).json({ message: "Room Successflly created" });
+        res.status(201).json({ message: "Hotel Created Successfully", data: newRoom });
     } catch (error) {
-        res.status(200).json({ message: error.message })
+        console.error(error.message);
+        if (error instanceof multer.MulterError) {
+            res.status(400).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
     }
-};
+}
+
 
 // Update Rooms
 exports.updateRoom = async (req, res) => {
@@ -49,10 +108,10 @@ exports.updateRoom = async (req, res) => {
             updateData,
             { new: true, runValidators: true }
         );
-        
-       return res.status(200).json({ message: "Room Updated successfully", data: newRoom });
+
+        return res.status(200).json({ message: "Room Updated successfully", data: newRoom });
     } catch (error) {
-       return res.status(500).json({ message: error.message })
+        return res.status(500).json({ message: error.message })
     }
 };
 
@@ -60,7 +119,7 @@ exports.updateRoom = async (req, res) => {
 exports.getAllRoomList = async (req, res) => {
     try {
         const rooms = await Rooms.find({});
-        res.status(200).json({ data: rooms });
+        res.status(200).send(rooms);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -68,7 +127,7 @@ exports.getAllRoomList = async (req, res) => {
 
 
 // Get Single Room list
-exports.getSingleRoomList = async (req, res) => {
+exports.getSingleRoom = async (req, res) => {
     try {
         const { roomId } = req.query;
 
@@ -80,7 +139,7 @@ exports.getSingleRoomList = async (req, res) => {
         if (!room) {
             return res.status(404).json({ message: "Room not found" });
         }
-        res.status(200).json({ data: room });
+        res.status(200).send(room);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

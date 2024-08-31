@@ -7,30 +7,30 @@ require("dotenv").config();
 // User SignUp
 exports.signUp = async (req, res) => {
     try {
-        const { userName, sureName, email, password, confirmPassword } = req.body;
+        const { name, email, password, confirmpassword } = req.body;
 
         // Check if user already exists
         const user = await User.findOne({ email });
         if (user) {
-            return res.status(401).json({ message: "Email already exists" });
+            return res.status(401).json({ message: "Email is already exists" });
         }
 
         // Check if passwords match
-        if (password !== confirmPassword) {
+        if (password !== confirmpassword) {
             return res.status(400).json({ message: "Passwords do not match" });
         }
 
         // Hash passwords
         const hashPassword = await bcrypt.hash(password, 10);
-        const hashConfirmPassword = await bcrypt.hash(confirmPassword, 10);
+       // const hashConfirmPassword = await bcrypt.hash(confirmpassword, 10);
 
         // Create new user
         const newUser = new User({
-            userName,
-            sureName,
+            name,
             email,
             password: hashPassword,
-            confirmPassword: hashConfirmPassword
+           // confirmpassword: hashConfirmPassword
+           confirmpassword
         });
 
         // Save new user
@@ -58,9 +58,17 @@ exports.login = async (req, res) => {
         if (!passwordMatch) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
-        const otp = Math.floor(Math.random() * 10000).toString();
+        // const otp = Math.floor(Math.random() * 10000).toString();
+        // user.otp = otp;
+        // user.otpExpiry = Date.now() + 10 * 60 * 1000 // OTP expiry in 10m
+        // await user.save();
+
+
+        // Generate a 4-digit OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
         user.otp = otp;
-        user.otpExpiry = Date.now() + 10 * 60 * 1000 // OTP expiry in 10m
+        user.otpExpiry = Date.now() + 10 * 60 * 1000; // OTP expiry in 10 minutes
         await user.save();
 
         const transporter = nodemailer.createTransport({
@@ -94,12 +102,20 @@ exports.verifyOtp = async (req, res) => {
         if (user.otp !== otp || user.otpExpiry < Date.now()) {
             return res.status(400).json({ message: "Invalid or Expiry otp" });
         }
+
+        const tempUser = {
+            name : user.name,
+            email : user.email,
+            _id: user._id,
+            createdAt:user.createdAt,
+            updatedAt:user.updatedAt
+        }
         // OTP is valid, proceed with login (or issue a JWT, etc.)
         user.otp = null;
         user.otpExpiry = null;
         await user.save();
         const jwtToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" })
-        res.status(200).json({ message: "OTP verified successfully", token: jwtToken });
+        res.status(200).json({ message: "OTP verified successfully", token: jwtToken, data: tempUser });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -113,7 +129,7 @@ exports.forgetPassword = async (req, res) => {
         if (!user) {
             res.status(404).json({ message: "User not found" });
         }
-        const resetToken =  Math.random().toString(36).slice(-8);
+        const resetToken = Math.random().toString(36).slice(-8);
         user.resetPasswordToken = resetToken;
         user.resetPasswordTokenExpiry = Date.now() + 3600000;
         await user.save();
@@ -168,7 +184,7 @@ exports.resetPassword = async (req, res) => {
         user.password = hashedPassword;
         user.confirmPassword = hashedConfirmPassword;
         await user.save();
-        
+
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {

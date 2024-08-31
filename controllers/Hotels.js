@@ -28,11 +28,10 @@ exports.createHotel = async (req, res) => {
         // Create a new hotel document
         const newHotel = new Hotel({
             hotelName,
-            hotelName: amenities ? amenities.split(",") : [],
+            amenities: amenities ? amenities.split(",") : [],
             description,
             address,
             locations,
-            // rooms: JSON.parse(rooms),
             images: imagePaths
         });
 
@@ -47,7 +46,7 @@ exports.createHotel = async (req, res) => {
             res.status(500).json({ message: error.message });
         }
     }
-};
+}
 
 exports.updateHotel = async (req, res) => {
     try {
@@ -91,13 +90,12 @@ exports.getAllHotelList = async (req, res) => {
             .populate("rooms")
             .populate("ratings");
 
-        res.status(200).json({ data: hotels });
+        res.status(200).send(hotels)
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// Get Single Hotel details
 exports.getSingleHotelList = async (req, res) => {
     try {
         const { hotelId } = req.query;
@@ -107,9 +105,9 @@ exports.getSingleHotelList = async (req, res) => {
         }
 
         const hotel = await Hotel.findById(hotelId)
-            .populate("rooms")
-            .populate("reviews")
-            .populate("ratings");
+            // .populate("rooms")
+            // .populate("reviews")
+            // .populate("ratings");
 
         if (!hotel) {
             return res.status(404).json({ message: "Hotel not found" });
@@ -117,7 +115,8 @@ exports.getSingleHotelList = async (req, res) => {
 
         res.status(200).json({ data: hotel });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(error.message); // Log the error for debugging purposes
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 

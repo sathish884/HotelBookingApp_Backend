@@ -2,12 +2,14 @@ const mongoose = require("mongoose");
 
 const RoomShema = new mongoose.Schema(
     {
-        roomName: { type: String, required: true },
+        name: { type: String, required: true },
         amenities: [String],
-        price: { type: Number, required: true },
-        sharingCount: { type: Number, required: true },
         description: { type: String, required: true },
-        images: [String],
+        rentperday: { type: Number, required: true },
+        maxCount: { type: Number, required: true },
+        imagesurls: [String],
+        currentbooking: [],
+        type: { type: String, required: true }
     },
     { timestamps: true }
 );
