@@ -5,64 +5,107 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 // User SignUp
-exports.signUp = async (req, res) => {
+exports.register = async (req, res) => {
     try {
-        const { name, email, password, confirmpassword } = req.body;
+        const { name, email, password, confirmPassword } = req.body;
 
         // Check if user already exists
         const user = await User.findOne({ email });
         if (user) {
-            return res.status(401).json({ message: "Email is already exists" });
+            return res.status(401).json({ message: "Email already exists" });
         }
 
         // Check if passwords match
-        if (password !== confirmpassword) {
+        if (password !== confirmPassword) {
             return res.status(400).json({ message: "Passwords do not match" });
         }
 
-        // Hash passwords
+        // Hash password
         const hashPassword = await bcrypt.hash(password, 10);
-       // const hashConfirmPassword = await bcrypt.hash(confirmpassword, 10);
+        const hashConfirmPassword = await bcrypt.hash(confirmPassword, 10);
 
         // Create new user
         const newUser = new User({
             name,
             email,
             password: hashPassword,
-           // confirmpassword: hashConfirmPassword
-           confirmpassword
+            confirmPassword: hashConfirmPassword
         });
 
-        // Save new user
         await newUser.save();
 
-        console.log(newUser);
-        // Send success response
-        return res.status(200).json({ message: "Successfully Registered" });
+        // Generate activation token
+        const activationToken = jwt.sign(
+            { id: newUser._id },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: '1h' }
+        );
+
+        const activationURL = `${process.env.CLIENT_URL}/activate/${activationToken}`;
+
+        // Configure transporter for nodemailer
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        // Send activation email
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: newUser.email, // Use newUser.email here
+            subject: "Account Activation",
+            text: `Please activate your account by clicking the following link: \n${activationURL}`,
+        });
+
+        res.status(201).json({ message: 'User registered. Check your email to activate your account.', token: activationToken });
 
     } catch (error) {
-        // Send error response
         return res.status(500).json({ message: error.message });
     }
 }
 
-// login
+// User activation
+exports.activateAccount = async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'Invalid token' });
+        }
+
+        user.isActive = true;
+        await user.save();
+
+        res.status(200).json({ message: 'Account activated. You can now log in.' });
+    } catch (err) {
+        res.status(400).json({ message: 'Invalid token' });
+    }
+};
+
+// User login
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
-        // const otp = Math.floor(Math.random() * 10000).toString();
-        // user.otp = otp;
-        // user.otpExpiry = Date.now() + 10 * 60 * 1000 // OTP expiry in 10m
-        // await user.save();
 
+        if (user.isActive != true) {
+            return res.status(400).json({ message: "Please active the account" });
+        }
 
         // Generate a 4-digit OTP
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -74,13 +117,13 @@ exports.login = async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.NODEMAILER_USER,
-                pass: process.env.NODEMAILER_PASS
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
 
         await transporter.sendMail({
-            from: process.env.NODEMAILER_USER,
+            from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Your OTP code",
             text: `Your otp code is ${otp}`
@@ -91,29 +134,30 @@ exports.login = async (req, res) => {
     }
 }
 
-// verify otp
+// Verify otp
 exports.verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "User not found" })
-        }
+
         if (user.otp !== otp || user.otpExpiry < Date.now()) {
             return res.status(400).json({ message: "Invalid or Expiry otp" });
         }
 
-        const tempUser = {
-            name : user.name,
-            email : user.email,
-            _id: user._id,
-            createdAt:user.createdAt,
-            updatedAt:user.updatedAt
-        }
         // OTP is valid, proceed with login (or issue a JWT, etc.)
         user.otp = null;
         user.otpExpiry = null;
+
         await user.save();
+
+        const tempUser = {
+            name: user.name,
+            email: user.email,
+            _id: user._id,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        }
+
         const jwtToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" })
         res.status(200).json({ message: "OTP verified successfully", token: jwtToken, data: tempUser });
     } catch (error) {
@@ -121,87 +165,164 @@ exports.verifyOtp = async (req, res) => {
     }
 };
 
-// Forget Password
-exports.forgetPassword = async (req, res) => {
+
+// // Forget password
+// exports.forgotPassword = async (req, res) => {
+//     const { email } = req.body;
+
+//     try {
+//         const user = await User.findOne({ email });
+
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+
+//         await user.save();
+
+//         const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+//             expiresIn: '5m',
+//         });
+
+//         user.resetPasswordToken = resetToken;
+
+//         await user.save();
+
+//         const transporter = nodemailer.createTransport({
+//             service: "gmail",
+//             auth: {
+//                 user: process.env.EMAIL_USER,
+//                 pass: process.env.EMAIL_PASS
+//             }
+//         })
+
+//         const msg = {
+//             from: process.env.EMAIL_USER,
+//             to: user.email,
+//             subject: 'Password Reset',
+//             text: `You are receiving this email because you has requested a password reset for your account. \n\ Please use the following token to reset your password \n\n\ ${resetToken} \n\n If you didn't request a password reset, please ignore this email.`
+//         }
+
+//         await transporter.sendMail(msg)
+
+//         res.status(200).json({ message: 'Password reset email sent', token: resetToken });
+//     } catch (err) {
+//         res.status(400).json({ message: err.message });
+//     }
+// };
+
+// Forgot Password
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
     try {
-        const { email } = req.body;
-        const user = await User.findOne({ email })
+        const user = await User.findOne({ email });
+
         if (!user) {
-            res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: 'User not found' });
         }
-        const resetToken = Math.random().toString(36).slice(-8);
+
+        const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+            algorithm: 'HS256', // Using HS384 for potentially shorter token
+            expiresIn: '5m',   // 5 minutes expiration
+        });
+
         user.resetPasswordToken = resetToken;
-        user.resetPasswordTokenExpiry = Date.now() + 3600000;
+
         await user.save();
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.NODEMAILER_USER,
-                pass: process.env.NODEMAILER_PASS
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
 
-        await transporter.sendMail({
-            from: process.env.NODEMAILER_USER,
+        const msg = {
+            from: process.env.EMAIL_USER,
             to: user.email,
-            subject: "Password reset request",
-            text: `You are receiving this email because you has requested a password reset for your account. \n\ Please use the following token to reset your password: ${resetToken} \n\n If you didn't request a password reset, please ignore this email.`
-        })
-        return res.status(200).json({ message: "Token is sented to your email" })
-    } catch (error) {
-        return res.status(500).json({ message: error.message })
-    }
-}
+            subject: 'Password Reset',
+            text: `You are receiving this email because you have requested a password reset for your account. \n\nPlease use the following token to reset your password: \n\n${resetToken} \n\nIf you didn't request a password reset, please ignore this email.`
+        };
 
-// Verify the reset password token
+        await transporter.sendMail(msg);
+
+        res.status(200).json({ message: 'Password reset email sent', token: resetToken });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+
+
+// Token verify
 exports.forgetPasswordTokenVerify = async (req, res) => {
+    const { token } = req.body;
     try {
-        const { email, token } = req.body;
-        const user = await User.findOne({ email });
-        if (user.resetPasswordToken !== token || user.resetPasswordTokenExpiry < Date.now()) {
-            return res.status(400).json({ message: "Invalid or Expiry OTP" })
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'Invalid token' });
         }
-        user.resetPasswordToken = null;
-        user.resetPasswordTokenExpiry = null;
+
         await user.save();
-        res.status(200).json({ message: "Verified successfully" });
+
+        res.status(200).json({ message: 'Token verified successful' });
+
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        res.status(400).json({ message: error.message });
     }
 }
 
-// Reset Password 
+// Reset Password
 exports.resetPassword = async (req, res) => {
+    const { email, password, confirmPassword } = req.body;
+
     try {
-        const { email, password, confirmPassword } = req.body;
+        // Find user by email
         const user = await User.findOne({ email });
-        if (password !== confirmPassword) {
-            res.status(400).json({ message: "Password are Mismatched" })
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
         }
+
+        // Check if password and confirm password match
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: "Passwords do not match" });
+        }
+
+        // Hash the new password
         const hashedPassword = await bcrypt.hash(password, 10);
         const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 10);
+
+        // Update user's password and reset token
         user.password = hashedPassword;
         user.confirmPassword = hashedConfirmPassword;
+        user.resetPasswordToken = null;  // Clear the reset token
+
+        // Save the updated user
         await user.save();
 
+        // Send confirmation email
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.NODEMAILER_USER,
-                pass: process.env.NODEMAILER_PASS
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
 
         await transporter.sendMail({
-            from: process.env.NODEMAILER_USER,
+            from: process.env.EMAIL_USER,
             to: user.email,
-            subject: "Password Reset",
-            text: `You Password reset successfully.`
-        })
-        res.status(200).json({ message: "Password Reset Successfully" });
+            subject: "Password Reset Successful",
+            text: `Your password has been successfully reset.`
+        });
+
+        res.status(200).json({ message: "Your password has been successfully reset." });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
