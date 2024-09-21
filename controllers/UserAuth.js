@@ -166,50 +166,6 @@ exports.verifyOtp = async (req, res) => {
 };
 
 
-// // Forget password
-// exports.forgotPassword = async (req, res) => {
-//     const { email } = req.body;
-
-//     try {
-//         const user = await User.findOne({ email });
-
-//         if (!user) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
-
-//         await user.save();
-
-//         const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-//             expiresIn: '5m',
-//         });
-
-//         user.resetPasswordToken = resetToken;
-
-//         await user.save();
-
-//         const transporter = nodemailer.createTransport({
-//             service: "gmail",
-//             auth: {
-//                 user: process.env.EMAIL_USER,
-//                 pass: process.env.EMAIL_PASS
-//             }
-//         })
-
-//         const msg = {
-//             from: process.env.EMAIL_USER,
-//             to: user.email,
-//             subject: 'Password Reset',
-//             text: `You are receiving this email because you has requested a password reset for your account. \n\ Please use the following token to reset your password \n\n\ ${resetToken} \n\n If you didn't request a password reset, please ignore this email.`
-//         }
-
-//         await transporter.sendMail(msg)
-
-//         res.status(200).json({ message: 'Password reset email sent', token: resetToken });
-//     } catch (err) {
-//         res.status(400).json({ message: err.message });
-//     }
-// };
-
 // Forgot Password
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -321,6 +277,23 @@ exports.resetPassword = async (req, res) => {
         });
 
         res.status(200).json({ message: "Your password has been successfully reset." });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}); // Retrieve all users
+        const tempUsers = users.map(user => ({
+            name: user.name,
+            email: user.email,
+            _id: user._id,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        })); // Map over the users to extract necessary fields
+        
+        res.json(tempUsers); // Send the array of user objects
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

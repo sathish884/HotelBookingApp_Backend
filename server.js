@@ -9,6 +9,7 @@ const hotelRoutes = require("./routers/Hotels");
 const roomRoutes = require("./routers/Rooms");
 const ratingRoutes = require("./routers/Ratings");
 const bookingRoutes = require("./routers/Bookings");
+const reviewRoutes = require("./routers/Reviews");
 
 
 const app = express();
@@ -22,6 +23,7 @@ app.use("/api", hotelRoutes);
 app.use("/api", roomRoutes);
 app.use("/api", ratingRoutes);
 app.use("/api", bookingRoutes);
+app.use("/api", reviewRoutes);
 
 mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log("MongoDB was connected");

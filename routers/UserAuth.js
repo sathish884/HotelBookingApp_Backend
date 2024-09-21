@@ -10,5 +10,6 @@ router.route("/otp-verify").post(userAuth.verifyOtp);
 router.route("/forget-password").post(userAuth.forgotPassword);
 router.route("/tokenverify").post(userAuth.forgetPasswordTokenVerify);
 router.route("/reset-passsword").post(userAuth.resetPassword);
+router.route("/getallusers").get(userAuth.getAllUsers);
 
 module.exports = router;

@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-const RoomShema = new mongoose.Schema(
+const RoomSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
-        amenities: [String],
+        amenities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Amenities' }], // Reference to Amenities
         description: { type: String, required: true },
         rentperday: { type: Number, required: true },
         maxCount: { type: Number, required: true },
@@ -14,4 +14,14 @@ const RoomShema = new mongoose.Schema(
     { timestamps: true }
 );
 
-module.exports = mongoose.model("Rooms", RoomShema)
+const AmenitiesSchema = new mongoose.Schema(
+    {
+        name: { type: String, required: true }
+    },
+    { timestamps: true }
+);
+
+const Rooms = mongoose.model("Rooms", RoomSchema);
+const Amenities = mongoose.model("Amenities", AmenitiesSchema);
+
+module.exports = { Rooms, Amenities };

@@ -14,4 +14,8 @@ router.route("/getAllRoomList").get(roomController.getAllRoomList);
 router.route("/getSingleRoom").get(roomController.getSingleRoom);
 router.route("/deleteRoom").delete(roomController.deleteRoom);
 
+// Amenities
+router.route("/create-amenities").post(roomController.createAmenities);
+router.route("/getAllAmenities").get(roomController.getAllAmenities);
+
 module.exports = router;
