@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const RoomSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
+        bed: { type: String, required: true },
         amenities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Amenities' }], // Reference to Amenities
         description: { type: String, required: true },
         rentperday: { type: Number, required: true },

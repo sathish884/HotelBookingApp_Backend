@@ -28,6 +28,7 @@ exports.register = async (req, res) => {
         const newUser = new User({
             name,
             email,
+            role: 'user',
             password: hashPassword,
             confirmPassword: hashConfirmPassword
         });
@@ -60,7 +61,7 @@ exports.register = async (req, res) => {
             text: `Please activate your account by clicking the following link: \n${activationURL}`,
         });
 
-        res.status(201).json({ message: 'User registered. Check your email to activate your account.', token: activationToken });
+        res.status(201).json({ message: 'User registered successfully. Check your email to activate your account.', token: activationToken });
 
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -153,12 +154,13 @@ exports.verifyOtp = async (req, res) => {
         const tempUser = {
             name: user.name,
             email: user.email,
+            role: user.role,
             _id: user._id,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         }
 
-        const jwtToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" })
+        const jwtToken = jwt.sign({ userId: user._id, name: user.name, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: "1h" })
         res.status(200).json({ message: "OTP verified successfully", token: jwtToken, data: tempUser });
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -292,7 +294,7 @@ exports.getAllUsers = async (req, res) => {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         })); // Map over the users to extract necessary fields
-        
+
         res.json(tempUsers); // Send the array of user objects
     } catch (error) {
         res.status(500).json({ message: error.message });

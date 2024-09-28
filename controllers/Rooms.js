@@ -1,17 +1,16 @@
 const { Rooms, Amenities } = require("../models/Rooms");
-// const multer = require('multer');
-// const path = require('path');
 
 // Create Room Controller
 exports.createRoom = async (req, res) => {
     try {
-        const { name, amenities, description, rentperday, maxCount, currentbooking, type, imagesurls } = req.body;
+        const { name, bed, amenities, description, rentperday, maxCount, currentbooking, type, imagesurls } = req.body;
 
         // Find amenities by their ObjectId
         const foundAmenities = await Amenities.find({ _id: { $in: amenities } });
 
         const newRoom = new Rooms({
             name,
+            bed,
             amenities: foundAmenities.map(amenity => amenity._id), // Link amenities by ID
             description,
             rentperday,

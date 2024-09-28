@@ -5,12 +5,11 @@ require("dotenv").config();
 const cors = require("cors");
 
 const userAuthRoutes = require("./routers/UserAuth");
-const hotelRoutes = require("./routers/Hotels");
+// const hotelRoutes = require("./routers/Hotels");
 const roomRoutes = require("./routers/Rooms");
-const ratingRoutes = require("./routers/Ratings");
+// const ratingRoutes = require("./routers/Ratings");
 const bookingRoutes = require("./routers/Bookings");
 const reviewRoutes = require("./routers/Reviews");
-
 
 const app = express();
 app.use(cors());
@@ -19,9 +18,9 @@ app.use(bodyparser.json());
 //app.use('../uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api", userAuthRoutes);
-app.use("/api", hotelRoutes);
+// app.use("/api", hotelRoutes);
 app.use("/api", roomRoutes);
-app.use("/api", ratingRoutes);
+// app.use("/api", ratingRoutes);
 app.use("/api", bookingRoutes);
 app.use("/api", reviewRoutes);
 

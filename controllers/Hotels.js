@@ -1,5 +1,4 @@
 const Hotel = require('../models/Hotel'); // Adjust the path accordingly
-const multer = require('multer');
 const path = require('path');
 
 
@@ -17,10 +16,7 @@ exports.createHotel = async (req, res) => {
             return res.status(400).json({ message: "Invalid latitude or longitude value." });
         }
 
-        // Check if files were uploaded
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: "No images uploaded." });
-        }
+       
 
         // Extract filenames from file paths
         const imagePaths = req.files.map(file => path.basename(file.path));
@@ -31,8 +27,7 @@ exports.createHotel = async (req, res) => {
             amenities: amenities ? amenities.split(",") : [],
             description,
             address,
-            locations,
-            images: imagePaths
+            locations
         });
 
         await newHotel.save();
@@ -54,10 +49,6 @@ exports.updateHotel = async (req, res) => {
 
         if (!hotelId) {
             return res.status(400).json({ message: "Hotel ID is required" });
-        }
-
-        if (req.files && req.files.length > 0) {
-            req.body.images = req.files.map(file => path.basename(file.path));
         }
 
         req.body.amenities = req.body.amenities ? req.body.amenities.split(",") : [];
