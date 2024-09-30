@@ -1,135 +1,76 @@
-// const Booking = require("../models/Booking");
-// const Room = require("../models/Rooms");
-// require("dotenv").config();
-// const stripe = require('stripe')(process.env.STRIPE_KEY);
-// const { v4: uuidv4 } = require('uuid');
-
-
-// exports.bookingRooms = async (req, res) => {
-//     const { room, userid, fromdate, todate, totalamount, totaldays, token } = req.body;
-
-//     try {
-//         const customer = await stripe.customers.create({
-//             email: token.email,
-//             source: token.id
-//         });
-
-//         const payment = await stripe.charges.create(
-//             {
-//                 amount: totalamount * 100,
-//                 customer: customer.id,
-//                 currency: "inr",
-//                 receipt_email: token.email
-//             },
-//             {
-//                 idempotencyKey: uuidv4()
-//             }
-//         );
-
-//         if (payment) {
-//             const newbooking = new Booking({
-//                 room: room.name,
-//                 roomid: room._id,
-//                 userid,
-//                 fromdate,
-//                 todate,
-//                 totalamount,
-//                 totaldays,
-//                 transactionId: '12345'
-//             });
-
-//             const savedBooking = await newbooking.save();
-
-//             const roomToUpdate = await Room.findOne({ _id: room._id });
-
-//             roomToUpdate.currentbooking.push({
-//                 bookingid: savedBooking._id,
-//                 fromdate,
-//                 todate,
-//                 userid,
-//                 status: savedBooking.status
-//             });
-
-//             await roomToUpdate.save();
-//         }
-//         res.status(200).json({ message: 'Payment Successful, your room is booked' })
-//     } catch (error) {
-//         res.status(500).json({ message: error.message })
-//     }
-
-// }
-
-
+const moment = require("moment");
 const Booking = require("../models/Booking");
-const Room = require("../models/Rooms");
+const { Rooms } = require("../models/Rooms"); // Import Rooms model correctly
 require("dotenv").config();
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { v4: uuidv4 } = require('uuid');
 
 exports.bookingRooms = async (req, res) => {
     const { room, userid, fromdate, todate, totalamount, totaldays, token } = req.body;
 
-    // Validate inputs
-    if (!room || !userid || !fromdate || !todate || !totalamount || !token) {
-        return res.status(400).json({ message: "Missing required fields" });
-    }
-
     try {
-        // Stripe customer creation
+
+        // Convert fromdate and todate to ISO format (YYYY-MM-DD)
+        const fromDate = moment(fromdate, 'DD-MM-YYYY').format('YYYY-MM-DD');
+        const toDate = moment(todate, 'DD-MM-YYYY').format('YYYY-MM-DD');
+
+        if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
+
         const customer = await stripe.customers.create({
             email: token.email,
             source: token.id
         });
 
-        // Stripe payment charge
-        const payment = await stripe.charges.create(
-            {
-                amount: totalamount * 100, // Amount in cents
-                customer: customer.id,
-                currency: "inr",
-                receipt_email: token.email
-            },
-            {
-                idempotencyKey: uuidv4() // Prevent duplicate charges
-            }
-        );
+        const payment = await stripe.charges.create({
+            amount: totalamount * 100,
+            customer: customer.id,
+            currency: "inr",
+            receipt_email: token.email
+        }, {
+            idempotencyKey: uuidv4()
+        });
 
         if (payment) {
-            // Create new booking
-            const newbooking = new Booking({
+            const newBooking = new Booking({
                 room: room.name,
                 roomid: room._id,
                 userid,
-                fromdate,
-                todate,
+                fromdate: fromDate,
+                todate: toDate,
                 totalamount,
                 totaldays,
-                transactionId: payment.id // Store actual transaction ID
+                transactionId: "1234"
             });
 
-            const savedBooking = await newbooking.save();
+            const savedBooking = await newBooking.save();
 
-            // Update room availability
-            const roomToUpdate = await Room.findOne({ _id: room._id });
+            const roomToUpdate = await Rooms.findOne({ _id: room._id }); // Ensure you are using the correct model
+
             if (roomToUpdate) {
                 roomToUpdate.currentbooking.push({
                     bookingid: savedBooking._id,
-                    fromdate,
-                    todate,
-                    userid,
+                    fromdate:fromDate,
+                    todate:toDate,
+                    userid: userid,
                     status: savedBooking.status
                 });
 
                 await roomToUpdate.save();
+            } else {
+                throw new Error("Room not found for updating current bookings.");
             }
         }
 
         res.status(200).json({ message: 'Payment Successful, your room is booked' });
+
     } catch (error) {
         console.error('Booking error:', error);
         res.status(500).json({ message: error.message });
     }
 };
+
 
 exports.getBookingRooms = async (req, res) => {
     try {
@@ -171,7 +112,7 @@ exports.cancelBookingRoom = async (req, res) => {
         bookingitem.status = 'cancelled';
         await bookingitem.save();
 
-        const room = await Room.findOne({ _id: roomid });
+        const room = await Rooms.findOne({ _id: roomid });
 
         const bookings = room.currentbooking;
         const temp = bookings.filter(booking => booking.bookingid.toString() !== bookingid);

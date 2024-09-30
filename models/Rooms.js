@@ -8,9 +8,15 @@ const RoomSchema = new mongoose.Schema(
         description: { type: String, required: true },
         rentperday: { type: Number, required: true },
         maxCount: { type: Number, required: true },
-        imagesurls: [String],
-        currentbooking: [],
-        type: { type: String, required: true }
+        imagesurls: [{ type: String }], // Define as an array of strings
+        currentbooking: [{
+            bookingid: { type: mongoose.Schema.Types.ObjectId, ref: 'Bookings' }, // Reference to Booking
+            fromdate: { type: Date, required: true },
+            todate: { type: Date, required: true },
+            userid: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }, // Reference to Users
+            status: { type: String, default: 'booked' }
+        }],
+        type: { type: String, required: true },
     },
     { timestamps: true }
 );
