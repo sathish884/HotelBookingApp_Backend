@@ -19,7 +19,7 @@
   "name": "hotelbookingapp_backend",
   "description": "",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "engines":{
     "node": "14.x"
   },

@@ -24,6 +24,10 @@ app.use("/api", roomRoutes);
 app.use("/api", bookingRoutes);
 app.use("/api", reviewRoutes);
 
+app.get("/", (req, res) => {
+    res.json({ message: "Hello world" });
+})
+
 mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log("MongoDB was connected");
     app.listen(process.env.PORT, () => {
