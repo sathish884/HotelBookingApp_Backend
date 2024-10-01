@@ -7,7 +7,7 @@ require("dotenv").config();
 // User SignUp
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, confirmPassword } = req.body;
+        const { name, email, mobilenumber, password, confirmPassword } = req.body;
 
         // Check if user already exists
         const user = await User.findOne({ email });
@@ -28,6 +28,7 @@ exports.register = async (req, res) => {
         const newUser = new User({
             name,
             email,
+            mobilenumber,
             role: 'user',
             password: hashPassword,
             confirmPassword: hashConfirmPassword
@@ -154,6 +155,7 @@ exports.verifyOtp = async (req, res) => {
         const tempUser = {
             name: user.name,
             email: user.email,
+            mobilenumber: user.mobilenumber,
             role: user.role,
             _id: user._id,
             createdAt: user.createdAt,
@@ -290,6 +292,7 @@ exports.getAllUsers = async (req, res) => {
         const tempUsers = users.map(user => ({
             name: user.name,
             email: user.email,
+            mobilenumber: user.mobilenumber,
             _id: user._id,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
