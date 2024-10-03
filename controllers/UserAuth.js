@@ -235,6 +235,59 @@ exports.forgetPasswordTokenVerify = async (req, res) => {
     }
 }
 
+// // Reset Password
+// exports.resetPassword = async (req, res) => {
+//     const { email, password, confirmPassword } = req.body;
+
+//     try {
+//         // Find user by email
+//         const user = await User.findOne({ email });
+
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         // Check if password and confirm password match
+//         if (password !== confirmPassword) {
+//             return res.status(400).json({ message: "Passwords do not match" });
+//         }
+
+//         // Hash the new password
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 10);
+
+//         // Update user's password and reset token
+//         user.password = hashedPassword;
+//         user.confirmPassword = hashedConfirmPassword;
+//         user.resetPasswordToken = null;  // Clear the reset token
+
+//         // Save the updated user
+//         await user.save();
+
+//         // Send confirmation email
+//         const transporter = nodemailer.createTransport({
+//             service: "gmail",
+//             auth: {
+//                 user: process.env.EMAIL_USER,
+//                 pass: process.env.EMAIL_PASS
+//             }
+//         });
+
+//         const resetTime = Date.now()
+
+//         await transporter.sendMail({
+//             from: process.env.EMAIL_USER,
+//             to: user.email,
+//             subject: "Password Reset Successful",
+//             text: `Your password has been successfully reset.\n\n\ Username - ${user} \n\\n\ Reset Timestamp - ${resetTime}`
+//         });
+
+//         res.status(200).json({ message: "Your password has been successfully reset." });
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
 // Reset Password
 exports.resetPassword = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
@@ -254,11 +307,9 @@ exports.resetPassword = async (req, res) => {
 
         // Hash the new password
         const hashedPassword = await bcrypt.hash(password, 10);
-        const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 10);
 
         // Update user's password and reset token
         user.password = hashedPassword;
-        user.confirmPassword = hashedConfirmPassword;
         user.resetPasswordToken = null;  // Clear the reset token
 
         // Save the updated user
@@ -273,18 +324,22 @@ exports.resetPassword = async (req, res) => {
             }
         });
 
+        const resetTime = new Date().toISOString(); // Use ISO format for better readability
+
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: "Password Reset Successful",
-            text: `Your password has been successfully reset.`
+            text: `Your password has been successfully reset.\n\nUsername: ${user.email}\nReset Timestamp: ${resetTime}`
         });
 
         res.status(200).json({ message: "Your password has been successfully reset." });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(error); // Log error for debugging
+        res.status(500).json({ message: "An error occurred while resetting your password." });
     }
 };
+
 
 exports.getAllUsers = async (req, res) => {
     try {
@@ -293,6 +348,7 @@ exports.getAllUsers = async (req, res) => {
             name: user.name,
             email: user.email,
             mobilenumber: user.mobilenumber,
+            role: user.role,
             _id: user._id,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt

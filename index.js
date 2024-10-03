@@ -28,7 +28,7 @@ app.get("/", (req, res) => {
     res.json({ message: "Hello world" });
 })
 
-
+mongoose.set('debug', true); 
 mongoose.connect(process.env.MONGO_URI).then(() => {
     console.log("MongoDB was connected");
     app.listen(process.env.PORT || 3000, () => {
@@ -37,5 +37,3 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 }).catch(error => {
     console.log("Connection failed ", error);
 });
-
-
