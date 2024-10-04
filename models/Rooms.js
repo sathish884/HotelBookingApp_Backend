@@ -11,8 +11,8 @@ const RoomSchema = new mongoose.Schema(
         imagesurls: [{ type: String }], // Define as an array of strings
         currentbooking: [{
             bookingid: { type: mongoose.Schema.Types.ObjectId, ref: 'Bookings' }, // Reference to Booking
-            fromdate: { type: Date, required: true },
-            todate: { type: Date, required: true },
+            fromdate: { type: String, required: true },
+            todate: { type: String, required: true },
             userid: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }, // Reference to Users
             status: { type: String, default: 'booked' }
         }],

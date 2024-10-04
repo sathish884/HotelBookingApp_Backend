@@ -10,14 +10,6 @@ exports.bookingRooms = async (req, res) => {
 
     try {
 
-        // Convert fromdate and todate to ISO format (YYYY-MM-DD)
-        const fromDate = moment(fromdate, 'DD-MM-YYYY').format('YYYY-MM-DD');
-        const toDate = moment(todate, 'DD-MM-YYYY').format('YYYY-MM-DD');
-
-        if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
-            return res.status(400).json({ message: 'Invalid date format' });
-        }
-
         const customer = await stripe.customers.create({
             email: token.email,
             source: token.id
@@ -37,8 +29,8 @@ exports.bookingRooms = async (req, res) => {
                 room: room.name,
                 roomid: room._id,
                 userid,
-                fromdate: fromDate,
-                todate: toDate,
+                fromdate,
+                todate, 
                 totalamount,
                 totaldays,
                 transactionId: "1234"
@@ -46,13 +38,13 @@ exports.bookingRooms = async (req, res) => {
 
             const savedBooking = await newBooking.save();
 
-            const roomToUpdate = await Rooms.findOne({ _id: room._id }); // Ensure you are using the correct model
+            const roomToUpdate = await Rooms.findOne({ _id: room._id });
 
             if (roomToUpdate) {
                 roomToUpdate.currentbooking.push({
                     bookingid: savedBooking._id,
-                    fromdate:fromDate,
-                    todate:toDate,
+                    fromdate,  // Store as DD-MM-YYYY string
+                    todate,      // Store as DD-MM-YYYY string
                     userid: userid,
                     status: savedBooking.status
                 });
@@ -70,6 +62,7 @@ exports.bookingRooms = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 exports.getBookingRooms = async (req, res) => {

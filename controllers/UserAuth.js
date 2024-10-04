@@ -130,7 +130,7 @@ exports.login = async (req, res) => {
             subject: "Your OTP code",
             text: `Your otp code is ${otp}`
         })
-        return res.status(200).json({ message: "OTP is sent to your email", otp });
+        return res.status(200).json({ message: "OTP is sent to your email" });
     } catch (error) {
         return res.status(500).json({ message: error.message })
     }
@@ -207,7 +207,7 @@ exports.forgotPassword = async (req, res) => {
 
         await transporter.sendMail(msg);
 
-        res.status(200).json({ message: 'Password reset email sent', token: resetToken });
+        res.status(200).json({ message: 'Password reset email sent' });
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
@@ -234,59 +234,6 @@ exports.forgetPasswordTokenVerify = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 }
-
-// // Reset Password
-// exports.resetPassword = async (req, res) => {
-//     const { email, password, confirmPassword } = req.body;
-
-//     try {
-//         // Find user by email
-//         const user = await User.findOne({ email });
-
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         // Check if password and confirm password match
-//         if (password !== confirmPassword) {
-//             return res.status(400).json({ message: "Passwords do not match" });
-//         }
-
-//         // Hash the new password
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 10);
-
-//         // Update user's password and reset token
-//         user.password = hashedPassword;
-//         user.confirmPassword = hashedConfirmPassword;
-//         user.resetPasswordToken = null;  // Clear the reset token
-
-//         // Save the updated user
-//         await user.save();
-
-//         // Send confirmation email
-//         const transporter = nodemailer.createTransport({
-//             service: "gmail",
-//             auth: {
-//                 user: process.env.EMAIL_USER,
-//                 pass: process.env.EMAIL_PASS
-//             }
-//         });
-
-//         const resetTime = Date.now()
-
-//         await transporter.sendMail({
-//             from: process.env.EMAIL_USER,
-//             to: user.email,
-//             subject: "Password Reset Successful",
-//             text: `Your password has been successfully reset.\n\n\ Username - ${user} \n\\n\ Reset Timestamp - ${resetTime}`
-//         });
-
-//         res.status(200).json({ message: "Your password has been successfully reset." });
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// };
 
 // Reset Password
 exports.resetPassword = async (req, res) => {

@@ -5,8 +5,8 @@ const BookingSchema = new mongoose.Schema(
         room: { type: String, required: true },
         roomid: { type: mongoose.Schema.Types.ObjectId, ref: 'Rooms', required: true }, // Reference to Rooms
         userid: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true }, // Reference to Users
-        fromdate: { type: Date, required: true },
-        todate: { type: Date, required: true },
+        fromdate: { type: String, required: true},
+        todate: { type: String, required: true },
         totalamount: { type: Number, required: true },
         totaldays: { type: Number, required: true },
         transactionId: { type: String, required: true },
