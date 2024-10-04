@@ -62,7 +62,7 @@ exports.register = async (req, res) => {
             text: `Please activate your account by clicking the following link: \n${activationURL}`,
         });
 
-        res.status(201).json({ message: 'User registered successfully. Check your email to activate your account.'});
+        res.status(201).json({ message: 'User registered successfully. Check your email to activate your account.', token: activationToken });
 
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -130,7 +130,7 @@ exports.login = async (req, res) => {
             subject: "Your OTP code",
             text: `Your otp code is ${otp}`
         })
-        return res.status(200).json({ message: "OTP is sent to your email" });
+        return res.status(200).json({ message: "OTP is sent to your email", otp });
     } catch (error) {
         return res.status(500).json({ message: error.message })
     }
@@ -207,7 +207,7 @@ exports.forgotPassword = async (req, res) => {
 
         await transporter.sendMail(msg);
 
-        res.status(200).json({ message: 'Password reset email sent' });
+        res.status(200).json({ message: 'Password reset email sent', token: resetToken });
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
