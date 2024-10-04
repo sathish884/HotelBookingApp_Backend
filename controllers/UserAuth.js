@@ -62,7 +62,7 @@ exports.register = async (req, res) => {
             text: `Please activate your account by clicking the following link: \n${activationURL}`,
         });
 
-        res.status(201).json({ message: 'User registered successfully. Check your email to activate your account.', token: activationToken });
+        res.status(201).json({ message: 'User registered successfully. Check your email to activate your account.'});
 
     } catch (error) {
         return res.status(500).json({ message: error.message });
